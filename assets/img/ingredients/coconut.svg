@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-label="DỪA · BẾN TRE">
+    <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#FEFBF5"/><stop offset="1" stop-color="#E9DECC"/></linearGradient>
+    <radialGradient id="halo" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="petal" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#CBAE8A"/><stop offset="1" stop-color="#FFFFE9"/></linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#518063"/><stop offset="1" stop-color="#BDEDD4"/></linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+    <rect width="800" height="1000" fill="url(#bg)"/>
+    <ellipse cx="400" cy="420" rx="360" ry="330" fill="url(#halo)"/>
+    <g fill="#fff" opacity=".35" filter="url(#soft)"><ellipse cx="170" cy="210" rx="130" ry="36"/><ellipse cx="630" cy="610" rx="120" ry="34"/></g>
+    <rect x="34" y="34" width="732" height="932" fill="none" stroke="#B79A76" stroke-opacity=".18"/>
+    <circle cx="400" cy="82" r="17" fill="none" stroke="#B79A76" stroke-opacity=".45"/>
+    <path d="M391 89 q7 -13 19 -15 q0 13 -12 15" fill="none" stroke="#B79A76" stroke-width="1.5"/>
+    <text x="400" y="124" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" letter-spacing="4.6" fill="#2E3A44" opacity=".62">MÂY TRẮNG</text>
+    <g>
+    <ellipse cx="400" cy="800" rx="250" ry="55" fill="#5E4B36" opacity=".12" filter="url(#blur)"/>
+    <circle cx="330" cy="610" r="150" fill="#8A6B4C"/>
+    <circle cx="330" cy="610" r="150" fill="none" stroke="#6E5238" stroke-opacity=".35"/>
+    <g stroke="#6E5238" stroke-opacity=".3" fill="none">
+      <path d="M330 460 v300"/><path d="M180 610 h300"/><path d="M225 505 q105 105 210 0"/><path d="M225 715 q105 -105 210 0"/>
+    </g>
+    <circle cx="330" cy="610" r="46" fill="#5E4630" opacity=".65"/>
+    <path d="M480 660 a130 130 0 0 1 0 200 z" fill="#FFFDF6" stroke="#D8C6A6"/>
+    <path d="M480 660 a130 130 0 0 0 0 200 z" fill="#F3E8D2"/>
+    <circle cx="520" cy="760" r="10" fill="#E6D3B4" opacity=".7"/>
+    <g transform="translate(600 520) rotate(28)">
+      <path d="M0 0 C40 -70 120 -90 170 -40 C110 -10 50 10 0 0Z" fill="#9FB38A" opacity=".7"/>
+      <path d="M0 0 C70 20 120 80 100 140 C40 110 0 60 0 0Z" fill="#8FA47A" opacity=".6"/>
+      <path d="M0 0 L150 -45" stroke="#6E7F5C" stroke-width="3" opacity=".5"/>
+    </g>
+  </g>
+    <text x="70" y="906" font-family="Arial, sans-serif" font-size="8.5" letter-spacing="3" fill="#B79A76">MÂY TRẮNG · NGUYÊN LIỆU VIỆT</text>
+    <text x="70" y="934" font-family="Georgia, serif" font-size="21" fill="#2E3A44">DỪA · BẾN TRE</text>
+    <text x="730" y="906" text-anchor="end" font-family="Arial, sans-serif" font-size="8" letter-spacing="2.5" fill="#B79A76">VIỆT NAM</text>
+  </svg>

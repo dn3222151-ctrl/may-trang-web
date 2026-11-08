@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mây Trắng – Dashboard quản trị doanh nghiệp</title>
+<meta name="description" content="Dashboard quản trị Mây Trắng: doanh thu, lợi nhuận, đơn hàng, sản phẩm, đội ngũ và giao việc.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/dashboard.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234F46E5'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='Georgia'%3EM%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar" aria-label="Điều hướng quản trị">
+    <div class="sidebar__brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-text"><strong>Mây Trắng</strong><span>Business OS</span></div>
+    </div>
+    <nav class="sidebar__nav" aria-label="Menu chính">
+      <div class="side-group">
+        <div class="side-group-title">Tổng quan</div>
+        <button class="side-link active" data-view="overview" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          Tổng quan
+        </button>
+      </div>
+      <div class="side-group">
+        <div class="side-group-title">Kinh doanh</div>
+        <button class="side-link" data-view="orders" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12l2 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/><path d="M4 7h16M9 12h6"/></svg>
+          Đơn hàng
+          <span class="side-count" id="navOrdersCount">0</span>
+        </button>
+        <button class="side-link" data-view="products" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>
+          Sản phẩm &amp; kho
+        </button>
+        <button class="side-link" data-view="channels" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg>
+          Kênh bán hàng
+        </button>
+      </div>
+      <div class="side-group">
+        <div class="side-group-title">Tài chính</div>
+        <button class="side-link" data-view="finance" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6M20 16v-2"/></svg>
+          Doanh thu &amp; lợi nhuận
+        </button>
+        <button class="side-link" data-view="model" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 7l4 6 3-4 5 8z"/><path d="M3 21h18"/></svg>
+          Mô hình tài chính
+        </button>
+      </div>
+      <div class="side-group">
+        <div class="side-group-title">Đội ngũ</div>
+        <button class="side-link" data-view="members" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c0-3.6 2.9-5.8 6.5-5.8s6.5 2.2 6.5 5.8"/><path d="M16 5.2a3.4 3.4 0 0 1 0 6.5M18 14.5c2.2.6 3.5 2.4 3.5 5.5"/></svg>
+          Thành viên
+        </button>
+        <button class="side-link" data-view="tasks" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11M9 12h11M9 19h11"/><path d="m4 5 1.2 1.2L7.5 4M4 12l1.2 1.2L7.5 11M4 19l1.2 1.2L7.5 18"/></svg>
+          Giao việc
+          <span class="side-count" id="navTasksCount">0</span>
+        </button>
+        <button class="side-link" data-view="workspace" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M3 9h5"/></svg>
+          Cổng thành viên
+        </button>
+      </div>
+      <div class="side-group">
+        <div class="side-group-title">Hệ thống</div>
+        <button class="side-link" data-view="settings" type="button">
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          Cài đặt &amp; dữ liệu
+        </button>
+      </div>
+    </nav>
+    <div class="sidebar__foot">
+      <div class="side-user">
+        <span class="avatar" style="background:#4F46E5">LV</span>
+        <div class="side-user__meta"><strong>Lại Trọng Việt</strong><span>CEO · Quản trị viên</span></div>
+      </div>
+      <a class="side-store-link" href="index.html" target="_blank" rel="noopener">
+        <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
+        Mở cửa hàng
+      </a>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Mở menu">
+          <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <div class="topbar__titles">
+          <div class="page-title" id="pageTitle">Tổng quan kinh doanh</div>
+          <div class="page-crumb" id="pageCrumb">Mây Trắng · Dashboard</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <select class="range-select" id="rangeSelect" aria-label="Khoảng thời gian">
+          <option value="7">7 ngày qua</option>
+          <option value="30">30 ngày qua</option>
+          <option value="90">90 ngày qua</option>
+          <option value="365" selected>12 tháng qua</option>
+          <option value="all">Toàn bộ dữ liệu</option>
+        </select>
+        <div class="topbar-search">
+          <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" id="globalSearch" placeholder="Tìm đơn, sản phẩm, việc…" aria-label="Tìm kiếm toàn hệ thống" autocomplete="off">
+          <div class="search-dropdown hidden" id="searchDropdown"></div>
+        </div>
+        <div style="position:relative">
+          <button class="icon-btn" id="notifBtn" aria-label="Thông báo">
+            <svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+            <span class="dot" id="notifDot" hidden></span>
+          </button>
+          <div class="popover hidden" id="notifPopover"></div>
+        </div>
+        <a class="icon-btn" href="index.html" target="_blank" rel="noopener" aria-label="Mở website" title="Mở website">
+          <svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
+        </a>
+        <button class="avatar" style="background:#0F172A" aria-label="Tài khoản" title="Lại Trọng Việt – CEO">LV</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div id="view" class="view"></div>
+    </div>
+  </div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div id="drawerRoot"></div>
+<div id="modalRoot"></div>
+<div id="overlayRoot"></div>
+<div class="mt-toasts" id="mt-toasts"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/core/util.js"></script>
+<script src="assets/js/data/catalog.js"></script>
+<script src="assets/js/data/content.js"></script>
+<script src="assets/js/data/seed.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/core/finance.js"></script>
+<script src="assets/js/core/remote.js"></script>
+<script src="assets/js/dash/app.js"></script>
+<script src="assets/js/dash/overview.js"></script>
+<script src="assets/js/dash/sales.js"></script>
+<script src="assets/js/dash/finance-views.js"></script>
+<script src="assets/js/dash/team.js"></script>
+<script src="assets/js/dash/settings.js"></script>
+</body>
+</html>

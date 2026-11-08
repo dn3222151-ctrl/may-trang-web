@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-label="TRÀ XANH · THÁI NGUYÊN">
+    <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#F9FCF6"/><stop offset="1" stop-color="#DFE7D6"/></linearGradient>
+    <radialGradient id="halo" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="petal" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#A3C286"/><stop offset="1" stop-color="#FFFFE5"/></linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#518063"/><stop offset="1" stop-color="#BDEDD4"/></linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+    <rect width="800" height="1000" fill="url(#bg)"/>
+    <ellipse cx="400" cy="420" rx="360" ry="330" fill="url(#halo)"/>
+    <g fill="#fff" opacity=".35" filter="url(#soft)"><ellipse cx="170" cy="210" rx="130" ry="36"/><ellipse cx="630" cy="610" rx="120" ry="34"/></g>
+    <rect x="34" y="34" width="732" height="932" fill="none" stroke="#8FAE72" stroke-opacity=".18"/>
+    <circle cx="400" cy="82" r="17" fill="none" stroke="#8FAE72" stroke-opacity=".45"/>
+    <path d="M391 89 q7 -13 19 -15 q0 13 -12 15" fill="none" stroke="#8FAE72" stroke-width="1.5"/>
+    <text x="400" y="124" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" letter-spacing="4.6" fill="#2E3A44" opacity=".62">MÂY TRẮNG</text>
+    <g>
+    <path d="M400 820 q-20 -130 8 -250 q22 -110 4 -210" stroke="#7E9C63" stroke-width="5" fill="none" opacity=".55"/>
+    <ellipse cx="400" cy="812" rx="240" ry="50" fill="#5E7C5B" opacity=".1" filter="url(#blur)"/>
+    <g transform="translate(400 700) rotate(-38)">
+      <path d="M0 0 C-34 -26 -78 -12 -96 26 C-70 58 -26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L-84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 712 q-30 -22 -55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/><g transform="translate(400 645) rotate(42)">
+      <path d="M0 0 C34 -26 78 -12 96 26 C70 58 26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 657 q30 -22 55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/><g transform="translate(400 590) rotate(-46)">
+      <path d="M0 0 C-34 -26 -78 -12 -96 26 C-70 58 -26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L-84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 602 q-30 -22 -55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/><g transform="translate(400 535) rotate(50)">
+      <path d="M0 0 C34 -26 78 -12 96 26 C70 58 26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 547 q30 -22 55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/><g transform="translate(400 480) rotate(-54)">
+      <path d="M0 0 C-34 -26 -78 -12 -96 26 C-70 58 -26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L-84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 492 q-30 -22 -55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/><g transform="translate(400 425) rotate(58)">
+      <path d="M0 0 C34 -26 78 -12 96 26 C70 58 26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 437 q30 -22 55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/><g transform="translate(400 370) rotate(-62)">
+      <path d="M0 0 C-34 -26 -78 -12 -96 26 C-70 58 -26 48 0 0Z" fill="url(#leaf)" opacity=".9"/>
+      <path d="M0 0 L-84 24" stroke="#F4FBF6" stroke-width="1.4" opacity=".45"/>
+    </g><path d="M400 382 q-30 -22 -55 -28" stroke="#7E9C63" stroke-width="3" fill="none" opacity=".55"/>
+    <g opacity=".9"><circle cx="470" cy="410" r="22" fill="#FFFDF7"/><circle cx="470" cy="410" r="12" fill="#EAD8A8"/><circle cx="520" cy="440" r="16" fill="#FFFDF7"/><circle cx="520" cy="440" r="8" fill="#EAD8A8"/></g>
+  </g>
+    <text x="70" y="906" font-family="Arial, sans-serif" font-size="8.5" letter-spacing="3" fill="#8FAE72">MÂY TRẮNG · NGUYÊN LIỆU VIỆT</text>
+    <text x="70" y="934" font-family="Georgia, serif" font-size="21" fill="#2E3A44">TRÀ XANH · THÁI NGUYÊN</text>
+    <text x="730" y="906" text-anchor="end" font-family="Arial, sans-serif" font-size="8" letter-spacing="2.5" fill="#8FAE72">VIỆT NAM</text>
+  </svg>
