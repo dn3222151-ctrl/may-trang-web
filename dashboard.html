@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
 <meta charset="utf-8">
@@ -81,8 +81,8 @@
     </nav>
     <div class="sidebar__foot">
       <div class="side-user">
-        <span class="avatar" style="background:#4F46E5">LV</span>
-        <div class="side-user__meta"><strong>Lại Trọng Việt</strong><span>CEO · Quản trị viên</span></div>
+        <span class="avatar" style="background:#4F46E5">ND</span>
+        <div class="side-user__meta"><strong>Nguyễn Tiến Dũng</strong><span>CEO · Quản trị viên</span></div>
       </div>
       <a class="side-store-link" href="index.html" target="_blank" rel="noopener">
         <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
@@ -104,6 +104,7 @@
         </div>
       </div>
       <div class="topbar__right">
+        <button class="sync-pill local" id="syncPill" type="button" title="Trạng thái đồng bộ Supabase"><span class="sync-dot"></span><span id="syncText">Cục bộ</span></button>
         <select class="range-select" id="rangeSelect" aria-label="Khoảng thời gian">
           <option value="7">7 ngày qua</option>
           <option value="30">30 ngày qua</option>
@@ -126,11 +127,12 @@
         <a class="icon-btn" href="index.html" target="_blank" rel="noopener" aria-label="Mở website" title="Mở website">
           <svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
         </a>
-        <button class="avatar" style="background:#0F172A" aria-label="Tài khoản" title="Lại Trọng Việt – CEO">LV</button>
+        <button class="avatar" id="profileBtn" style="background:#0F172A" aria-label="Tài khoản" title="Nguyễn Tiến Dũng – CEO">ND</button>
       </div>
     </header>
 
     <div class="content">
+      <div class="cloud-banner hidden" id="cloudBanner"></div>
       <div id="view" class="view"></div>
     </div>
   </div>
@@ -150,6 +152,7 @@
 <script src="assets/js/core/store.js"></script>
 <script src="assets/js/core/finance.js"></script>
 <script src="assets/js/core/remote.js"></script>
+<script src="assets/js/core/sync.js"></script>
 <script src="assets/js/dash/app.js"></script>
 <script src="assets/js/dash/overview.js"></script>
 <script src="assets/js/dash/sales.js"></script>

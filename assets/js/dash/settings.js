@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    MÂY TRẮNG – Dashboard: Cài đặt, mã giảm giá, dữ liệu, Supabase
    ========================================================================== */
 (function () {
@@ -219,10 +219,10 @@
       '<div class="settings-block"><h4>Hướng dẫn nhanh</h4>' +
         '<ol style="font-size:.76rem;color:var(--db-ink-2);padding-left:1.2rem;line-height:1.9">' +
           '<li>Tạo project tại <strong>supabase.com</strong>.</li>' +
-          '<li>Mở SQL Editor, chạy lần lượt <code>supabase/schema.sql</code> và <code>supabase/seed.sql</code>.</li>' +
+          '<li>Project mới: mở SQL Editor, chạy <code>supabase/schema.sql</code> rồi <code>supabase/seed.sql</code>.</li><li>Project đã có bảng: chạy <code>supabase/migration-v2-auth-sync.sql</code> để bổ sung tài khoản thành viên, RLS và realtime.</li>' +
           '<li>Tạo user quản trị trong Authentication → Users, sau đó thêm bản ghi vào bảng <code>profiles</code> với role <code>admin</code>.</li>' +
           '<li>Dán Project URL và anon key vào ô phía trên, lưu cấu hình.</li>' +
-          '<li>Đăng nhập và bấm “Đẩy dữ liệu lên”.</li>' +
+          '<li>Đăng nhập và bấm “Đẩy dữ liệu lên”.</li><li>Tạo tài khoản cho thành viên trong mục <strong>Thành viên</strong>; thành viên đăng nhập tại <code>member.html</code>.</li>' +
         '</ol>' +
         '<div class="code-box">-- Kiểm tra nhanh sau khi cài đặt\nselect count(*) from products;\nselect count(*) from orders;</div>' +
       '</div>' +
@@ -349,6 +349,7 @@
         if (!c) return;
         const ok = await D.confirm({ title: 'Xoá mã ' + c.code + '?', message: 'Mã giảm giá sẽ không còn hiệu lực với khách hàng.', confirmText: 'Xoá', danger: true });
         if (!ok) return;
+        MT.bus.emit('entity:delete', { table: 'coupons', id: c.id });
         MT.db.data.coupons = MT.db.data.coupons.filter((x) => x.id !== c.id);
         MT.db.save('coupons'); D.toast('Đã xoá mã giảm giá', 'success'); D.refresh();
       }));
@@ -393,6 +394,8 @@
         const cfg = getCfg();
         if (!cfg.url || !cfg.anonKey) { D.toast('Nhập đủ Project URL và anon key', 'error'); return; }
         MT.remote.saveConfig(cfg);
+        if (MT.sync) { MT.sync.refresh(); }
+        if (D.updateCloudUI) D.updateCloudUI();
         D.toast('Đã lưu cấu hình Supabase', 'success');
         D.refresh();
       });
@@ -414,25 +417,7 @@
       const login = document.getElementById('loginSupa');
       if (login) login.addEventListener('click', () => {
         if (!MT.remote.isConfigured()) { D.toast('Lưu cấu hình trước khi đăng nhập', 'error'); return; }
-        D.modal({
-          title: 'Đăng nhập quản trị Supabase',
-          body: '<div class="field"><label>Email</label><input class="input" id="sbEmail" type="email" value="' + U.esc(MT.config.admin.demoEmail) + '"></div>' +
-            '<div class="field"><label>Mật khẩu</label><input class="input" id="sbPass" type="password" placeholder="••••••••"></div>' +
-            '<p style="font-size:.68rem;color:var(--db-muted)">Tài khoản cần có trong bảng profiles với role = admin để ghi dữ liệu.</p>',
-          footer: '<button class="btn" type="button" data-modal-close>Huỷ</button><button class="btn btn-primary" type="button" id="sbLoginSubmit">Đăng nhập</button>',
-          onMount(el, close) {
-            el.querySelector('#sbLoginSubmit').addEventListener('click', async () => {
-              const email = el.querySelector('#sbEmail').value.trim();
-              const pass = el.querySelector('#sbPass').value;
-              if (!email || !pass) { D.toast('Nhập email và mật khẩu', 'error'); return; }
-              try {
-                await MT.remote.signIn(email, pass);
-                D.toast('Đăng nhập thành công', 'success');
-                close(); D.refresh();
-              } catch (e) { D.toast(e.message, 'error'); }
-            });
-          },
-        });
+        D.openAdminLogin({ onSuccess: () => { D.refresh(); if (MT.sync) MT.sync.refresh(); } });
       });
       const push = document.getElementById('pushSupa');
       if (push) push.addEventListener('click', async () => {

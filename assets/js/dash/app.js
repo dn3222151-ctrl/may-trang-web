@@ -496,6 +496,239 @@
     document.body.classList.remove('no-scroll');
   }
 
+  /* ------------------------------ Cloud UI -------------------------------- */
+  function fmtLastSync(ts) {
+    if (!ts) return 'chưa đồng bộ';
+    return U.fmt.datetime(ts);
+  }
+
+  function updateCloudUI(s) {
+    const st = s || (MT.sync ? MT.sync.status() : {});
+    const configured = Boolean(MT.remote && MT.remote.isConfigured());
+    const signedIn = Boolean(MT.remote && MT.remote.isSignedIn());
+    const pill = document.getElementById('syncPill');
+    const text = document.getElementById('syncText');
+    const banner = document.getElementById('cloudBanner');
+    if (!pill || !text) return;
+
+    let cls = 'local';
+    let label = 'Cục bộ';
+    if (configured) {
+      if (!signedIn) {
+        cls = 'off';
+        label = st.pending ? 'Chờ đăng nhập (' + st.pending + ')' : 'Đăng nhập Supabase';
+      } else if (st.running) {
+        cls = 'syncing';
+        label = 'Đang đồng bộ…';
+      } else if (st.error) {
+        cls = 'error';
+        label = 'Lỗi đồng bộ';
+      } else if (st.pending) {
+        cls = 'off';
+        label = 'Chờ đồng bộ (' + st.pending + ')';
+      } else {
+        cls = 'on';
+        label = 'Đã đồng bộ';
+      }
+    }
+    pill.className = 'sync-pill ' + cls;
+    text.textContent = label;
+    pill.title = !configured
+      ? 'Chưa cấu hình Supabase — dữ liệu lưu cục bộ'
+      : !signedIn
+        ? 'Đăng nhập tài khoản quản trị để bật đồng bộ cloud'
+        : 'Lần đồng bộ gần nhất: ' + fmtLastSync(st.lastSync);
+
+    if (!banner) return;
+    if (!configured) { banner.classList.add('hidden'); return; }
+    let html = '';
+    let danger = false;
+    let action = null;
+    if (!signedIn) {
+      html = D.icon('globe', 17) + '<div class="grow"><strong>Chế độ cục bộ.</strong> Đăng nhập Supabase để thay đổi trên dashboard được tự động đẩy lên cloud và hiển thị trên các máy khác.</div><button class="btn btn-sm btn-primary" type="button" data-cloud-action="login">Đăng nhập</button>';
+      action = 'login';
+    } else if (st.error) {
+      danger = true;
+      html = D.icon('alert', 17) + '<div class="grow"><strong>Đồng bộ thất bại.</strong> ' + U.esc(st.error) + '</div><button class="btn btn-sm" type="button" data-cloud-action="retry">Thử lại</button><button class="btn btn-sm" type="button" data-cloud-action="settings">Cài đặt</button>';
+      action = 'retry';
+    } else if (st.pending) {
+      html = D.icon('activity', 17) + '<div class="grow"><strong>' + st.pending + ' thay đổi chưa đồng bộ.</strong> Dữ liệu sẽ được đẩy lên Supabase trong giây lát.</div><button class="btn btn-sm btn-primary" type="button" data-cloud-action="sync">Đồng bộ ngay</button>';
+      action = 'sync';
+    } else {
+      banner.classList.add('hidden');
+      return;
+    }
+    banner.className = 'cloud-banner' + (danger ? ' danger' : '');
+    banner.innerHTML = html;
+    void action;
+    const btn = banner.querySelector('[data-cloud-action]');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const a = btn.dataset.cloudAction;
+        if (a === 'login') D.openAdminLogin();
+        else if (a === 'retry' || a === 'sync') MT.sync.flushNow().then(() => updateCloudUI());
+        else if (a === 'settings') D.go('settings');
+      });
+    }
+  }
+  D.updateCloudUI = updateCloudUI;
+
+  async function pullCloud(successMessage) {
+    try {
+      const res = await MT.remote.pull();
+      if (MT.sync) MT.sync.markSynced();
+      D.refresh();
+      if (successMessage) {
+        U.toast(successMessage + ' · ' + res.orders + ' đơn, ' + res.tasks + ' nhiệm vụ', 'success', { duration: 4200 });
+      }
+      updateCloudUI();
+      return res;
+    } catch (e) {
+      if (MT.sync) MT.sync.setError(e.message);
+      updateCloudUI();
+      U.toast('Không tải được dữ liệu Supabase: ' + e.message, 'error', { duration: 6000 });
+      throw e;
+    }
+  }
+
+  async function afterAdminLogin() {
+    updateCloudUI();
+    if (MT.sync) MT.sync.refresh();
+    const pending = MT.sync ? MT.sync.pendingCount() : 0;
+    if (!pending) {
+      try { await pullCloud('Đã tải dữ liệu mới nhất từ Supabase'); } catch (e) {}
+      return;
+    }
+    D.modal({
+      title: 'Đồng bộ dữ liệu sau khi đăng nhập',
+      body: '<p style="font-size:.82rem;line-height:1.65">Bạn đang có <strong>' + pending + ' thay đổi cục bộ chưa đồng bộ</strong>. Bạn muốn đẩy các thay đổi này lên Supabase hay tải dữ liệu mới nhất từ cloud?</p>' +
+        '<div class="alert-banner" style="margin:0">' + D.icon('alert', 16) + '<div>Tải từ cloud sẽ thay thế dữ liệu cục bộ hiện tại. Đẩy lên cloud sẽ ghi đè dữ liệu tương ứng trên cloud.</div></div>',
+      footer: '<button class="btn" type="button" data-modal-close>Để sau</button>' +
+        '<button class="btn" type="button" id="choosePull">Tải từ cloud</button>' +
+        '<button class="btn btn-primary" type="button" id="choosePush">Đẩy cục bộ lên</button>',
+      onMount(el, close) {
+        el.querySelector('#choosePull').addEventListener('click', async () => {
+          close();
+          MT.sync.clearPending();
+          try { await pullCloud('Đã tải dữ liệu mới nhất từ Supabase'); } catch (e) {}
+        });
+        el.querySelector('#choosePush').addEventListener('click', async () => {
+          close();
+          try {
+            await MT.sync.flushNow();
+            if (MT.sync.pendingCount()) throw new Error('Vẫn còn thay đổi chưa đẩy được. Kiểm tra quyền admin và kết nối.');
+            U.toast('Đã đẩy thay đổi cục bộ lên Supabase', 'success');
+          } catch (e) { U.toast(e.message, 'error', { duration: 6000 }); }
+          updateCloudUI();
+        });
+      },
+    });
+  }
+
+  D.openAdminLogin = function (opts) {
+    const o = opts || {};
+    if (!MT.remote || !MT.remote.isConfigured()) {
+      U.toast('Chưa cấu hình Supabase. Hãy nhập Project URL và anon key trong Cài đặt.', 'error', { duration: 5000 });
+      D.go('settings');
+      return;
+    }
+    D.modal({
+      title: 'Đăng nhập quản trị Supabase',
+      body: '<div class="field"><label>Email quản trị</label><input class="input" id="adminEmail" type="email" value="' + U.esc(MT.config.admin.demoEmail) + '" autocomplete="username"></div>' +
+        '<div class="field"><label>Mật khẩu</label><input class="input" id="adminPassword" type="password" placeholder="••••••••" autocomplete="current-password"></div>' +
+        '<p style="font-size:.7rem;color:var(--db-muted);background:var(--db-line-soft);border-radius:8px;padding:.55rem .65rem">Tài khoản cần có <code>role = admin</code> trong bảng <code>profiles</code>. Sau khi đăng nhập, dashboard sẽ tự tải dữ liệu cloud và bật đồng bộ tự động.</p>',
+      footer: '<button class="btn" type="button" data-modal-close>Huỷ</button><button class="btn btn-primary" type="button" id="adminLoginBtn">Đăng nhập</button>',
+      onMount(el, close) {
+        const submit = async () => {
+          const email = el.querySelector('#adminEmail').value.trim();
+          const pass = el.querySelector('#adminPassword').value;
+          if (!email || !pass) { U.toast('Nhập email và mật khẩu', 'error'); return; }
+          const btn = el.querySelector('#adminLoginBtn');
+          btn.disabled = true; btn.textContent = 'Đang đăng nhập…';
+          try {
+            await MT.remote.signInAdmin(email, pass);
+            close();
+            U.toast('Đăng nhập quản trị thành công', 'success');
+            if (MT.sync) MT.sync.refresh();
+            updateCloudUI();
+            if (o.onSuccess) o.onSuccess();
+            else afterAdminLogin();
+          } catch (e) {
+            U.toast(e.message, 'error', { duration: 6000 });
+            btn.disabled = false; btn.textContent = 'Đăng nhập';
+          }
+        };
+        el.querySelector('#adminLoginBtn').addEventListener('click', submit);
+        el.querySelector('#adminPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+        setTimeout(() => el.querySelector('#adminEmail').focus(), 60);
+      },
+    });
+  };
+
+  function openSyncPanel() {
+    const s = MT.sync ? MT.sync.status() : {};
+    const st = MT.remote.status();
+    const account = st.signedIn ? U.esc(st.email || 'admin') : 'Chưa đăng nhập';
+    D.modal({
+      title: 'Đồng bộ Supabase',
+      body: '<div class="drawer-meta" style="font-size:.76rem">' +
+          '<div><span>Tài khoản</span><strong>' + account + '</strong></div>' +
+          '<div><span>Vai trò</span><strong>' + (st.role === 'admin' ? 'Quản trị viên' : (st.role || '—')) + '</strong></div>' +
+          '<div><span>Trạng thái</span><strong>' + (s.running ? 'Đang đồng bộ' : s.error ? 'Có lỗi' : s.pending ? 'Chờ đồng bộ' : 'Đã đồng bộ') + '</strong></div>' +
+          '<div><span>Chờ đẩy</span><strong>' + (s.pending || 0) + ' thay đổi</strong></div>' +
+          '<div><span>Lần cuối</span><strong>' + fmtLastSync(s.lastSync) + '</strong></div>' +
+          '<div><span>Bucket bằng chứng</span><strong>' + U.esc(st.config.evidenceBucket || 'task-evidence') + '</strong></div>' +
+        '</div>' +
+        (s.error ? '<div class="alert-banner alert-banner--danger" style="margin-top:.8rem">' + D.icon('alert', 16) + '<div>' + U.esc(s.error) + '</div></div>' : '') +
+        '<p style="font-size:.7rem;color:var(--db-muted);margin-top:.8rem">Thay đổi trên dashboard được tự động đẩy sau ~0,8 giây. Website và cổng thành viên tải dữ liệu mới khi mở trang hoặc qua realtime.</p>',
+      footer: '<button class="btn" type="button" data-modal-close>Đóng</button>' +
+        '<button class="btn" type="button" id="syncOpenSettings">Cài đặt</button>' +
+        '<button class="btn" type="button" id="syncPull">Tải từ cloud</button>' +
+        '<button class="btn btn-primary" type="button" id="syncNow">Đồng bộ ngay</button>',
+      onMount(el, close) {
+        el.querySelector('#syncNow').addEventListener('click', async () => {
+          close();
+          try {
+            await MT.sync.flushNow();
+            if (MT.sync.pendingCount()) throw new Error('Còn thay đổi chưa đẩy được.');
+            U.toast('Đã đồng bộ lên Supabase', 'success');
+          } catch (e) { U.toast(e.message, 'error', { duration: 5000 }); }
+          updateCloudUI();
+        });
+        el.querySelector('#syncPull').addEventListener('click', async () => {
+          close();
+          const ok = await D.confirm({ title: 'Tải dữ liệu từ Supabase?', message: 'Dữ liệu cục bộ sẽ bị thay thế bằng dữ liệu cloud mới nhất.', confirmText: 'Tải về', danger: true });
+          if (!ok) return;
+          MT.sync.clearPending();
+          try { await pullCloud('Đã tải dữ liệu từ Supabase'); } catch (e) {}
+        });
+        el.querySelector('#syncOpenSettings').addEventListener('click', () => { close(); D.go('settings'); });
+      },
+    });
+  }
+
+  async function cloudBootstrap() {
+    updateCloudUI();
+    if (!MT.remote || !MT.remote.isConfigured()) return;
+    try {
+      const session = await MT.remote.restoreSession();
+      if (!session) { updateCloudUI(); return; }
+      if (!MT.remote.isCurrentUserAdmin()) {
+        await MT.remote.signOut();
+        U.toast('Tài khoản này không có quyền quản trị dashboard.', 'error', { duration: 5000 });
+        updateCloudUI();
+        return;
+      }
+      if (MT.sync) MT.sync.refresh();
+      updateCloudUI();
+      await pullCloud('Đã đồng bộ dữ liệu từ Supabase');
+    } catch (e) {
+      console.warn('[cloud bootstrap]', e);
+      if (MT.sync) MT.sync.setError(e.message);
+      updateCloudUI();
+    }
+  }
+
   /* -------------------------------- Init ---------------------------------- */
   function bind() {
     $$('.side-link').forEach((btn) => btn.addEventListener('click', () => D.go(btn.dataset.view)));
@@ -509,6 +742,30 @@
       range.value = D.state.rangeKey;
       range.addEventListener('change', () => D.setRange(range.value));
     }
+
+    const syncPill = document.getElementById('syncPill');
+    if (syncPill) syncPill.addEventListener('click', () => {
+      if (!MT.remote.isConfigured()) { D.go('settings'); return; }
+      if (!MT.remote.isSignedIn()) { D.openAdminLogin(); return; }
+      openSyncPanel();
+    });
+
+    const profileBtn = document.getElementById('profileBtn');
+    if (profileBtn) profileBtn.addEventListener('click', async () => {
+      if (!MT.remote.isConfigured()) { D.go('settings'); return; }
+      if (!MT.remote.isSignedIn()) { D.openAdminLogin(); return; }
+      const st = MT.remote.status();
+      const ok = await D.confirm({
+        title: 'Tài khoản quản trị',
+        message: 'Đang đăng nhập: ' + (st.email || 'admin') + '. Bạn có muốn đăng xuất khỏi Supabase? Dữ liệu cục bộ vẫn được giữ lại.',
+        confirmText: 'Đăng xuất', danger: true,
+      });
+      if (!ok) return;
+      await MT.remote.signOut();
+      if (MT.sync) MT.sync.refresh();
+      updateCloudUI();
+      U.toast('Đã đăng xuất khỏi Supabase', 'success');
+    });
 
     const search = document.getElementById('globalSearch');
     if (search) {
@@ -569,11 +826,17 @@
   function init() {
     const hash = location.hash.slice(1);
     if (D.views[hash]) D.state.view = hash;
+    if (MT.sync) {
+      MT.sync.init();
+      MT.sync.onChange(updateCloudUI);
+    }
     bind();
     render();
     refreshNotifications();
+    updateCloudUI();
     // Đồng bộ khi tab khác thay đổi dữ liệu
     window.addEventListener('storage', U.debounce(() => D.refresh(), 400));
+    cloudBootstrap();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

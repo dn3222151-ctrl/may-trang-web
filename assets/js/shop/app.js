@@ -1120,6 +1120,49 @@
   }
 
   /* ---------------------------------- Init -------------------------------- */
+  let cloudBusy = false;
+  let lastCloudFetch = 0;
+
+  async function pullCloud(initial) {
+    if (!MT.remote || !MT.remote.isConfigured() || cloudBusy) return;
+    cloudBusy = true;
+    try {
+      const res = await MT.remote.pullPublic();
+      lastCloudFetch = Date.now();
+      renderHome();
+      renderCart();
+      refreshChrome();
+      const route = state.route.name;
+      if (route !== 'checkout' && route !== 'order') router();
+      const ann = MT.db.settings().store && MT.db.settings().store.announcement;
+      const el = document.getElementById('announcementText');
+      if (el && ann) el.textContent = '✦ ' + ann + ' ✦';
+      console.info('[cloud] Đã cập nhật', res.products, 'sản phẩm từ Supabase');
+    } catch (e) {
+      console.warn('[cloud] Không tải được dữ liệu Supabase:', e.message);
+    } finally {
+      cloudBusy = false;
+      void initial;
+    }
+  }
+
+  function initCloud() {
+    if (!MT.remote || !MT.remote.isConfigured()) return;
+    pullCloud(true).then(() => {
+      try {
+        MT.remote.subscribePublic(U.debounce(() => {
+          if (document.visibilityState === 'visible') pullCloud(false);
+        }, 1500));
+      } catch (e) {}
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastCloudFetch > 30000) pullCloud(false);
+    });
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && Date.now() - lastCloudFetch > 45000) pullCloud(false);
+    }, 45000);
+  }
+
   function init() {
     renderHome();
     renderCart();
@@ -1132,6 +1175,7 @@
       if (nl) nl.value = saved.email;
     }
     router();
+    initCloud();
   }
 
   if (document.readyState === 'loading') {

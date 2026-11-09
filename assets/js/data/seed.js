@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    MÂY TRẮNG – Dữ liệu khởi tạo (demo 12 tháng, thành viên, nhiệm vụ)
    Sinh dữ liệu có tính xác định để biểu đồ và phép tính luôn ổn định.
    ========================================================================== */
@@ -15,10 +15,10 @@ MT.seed = (function () {
 
   const memberSeeds = [
     {
-      id: 'MB-01', name: 'Lại Trọng Việt', role: 'Quản lý / Vận hành', email: 'viet@maytrang.vn',
+      id: 'MB-01', name: 'Nguyễn Tiến Dũng', role: 'Quản lý / Vận hành', email: 'dung@maytrang.vn',
       phone: '0987654321', equityPct: 25, weeklyHours: 20, status: 'active',
       joinedAt: '2026-01-05', color: '#4F46E5', kpiTarget: 150000000,
-      skills: ['Vận hành', 'Đàm phán', 'Bán sỉ'], note: 'Phụ trách vận hành và phát triển kênh CLB.',
+      skills: ['Vận hành', 'Đàm phán', 'Bán sỉ'], note: 'CEO — phụ trách vận hành và phát triển kênh CLB.',
     },
     {
       id: 'MB-02', name: 'Vũ Tiến Thiện Lam', role: 'Nguồn hàng & TMĐT', email: 'lam@maytrang.vn',
@@ -321,7 +321,7 @@ MT.seed = (function () {
           ev('EV-02', 'image', { url: U('photo-1556761175-b413da4baf72', 900), name: 'buoi-gap-clb.jpg', note: 'Ảnh tại buổi làm việc với Ban chủ nhiệm', at: at(1, 16) }),
         ],
         activity: [
-          { at: at(6), text: 'Giao việc cho Lại Trọng Việt', by: 'MB-01' },
+          { at: at(6), text: 'Giao việc cho Nguyễn Tiến Dũng', by: 'MB-01' },
           { at: at(2), text: 'Cập nhật tiến độ 40%', by: 'MB-01' },
           { at: at(1, 16), text: 'Nộp bằng chứng: ảnh buổi làm việc', by: 'MB-01' },
         ],
@@ -375,7 +375,7 @@ MT.seed = (function () {
         evidence: [
           ev('EV-07', 'text', { text: 'Đã hoàn thiện 3 mức giá: 10-20 bộ (10%), 21-40 bộ (15%), từ 41 bộ (18%). Chờ chị Hà Anh kiểm tra lại biên lợi nhuận.', at: at(1, 10) }),
         ],
-        activity: [{ at: at(10), text: 'Giao việc cho Lại Trọng Việt', by: 'MB-01' }, { at: at(1), text: 'Chuyển sang Chờ duyệt', by: 'MB-01' }],
+        activity: [{ at: at(10), text: 'Giao việc cho Nguyễn Tiến Dũng', by: 'MB-01' }, { at: at(1), text: 'Chuyển sang Chờ duyệt', by: 'MB-01' }],
       },
       {
         id: 'TK-07', code: 'CV-007', title: 'Chạy thử nghiệm ads TikTok 3 ngày',
@@ -456,7 +456,7 @@ MT.seed = (function () {
         desc: 'Đăng ký booth cuối tuần, chuẩn bị bàn, standee, máy POS và 50 bộ Combo Tân khách hàng. Phân công 2 bạn trực.',
         assigneeId: 'MB-01', priority: 'medium', status: 'todo', progress: 0,
         dueDate: d(3), createdAt: at(2), estimateHours: 5, tags: ['Sự kiện', 'Bán hàng'],
-        evidence: [], activity: [{ at: at(2), text: 'Giao việc cho Lại Trọng Việt', by: 'MB-01' }],
+        evidence: [], activity: [{ at: at(2), text: 'Giao việc cho Nguyễn Tiến Dũng', by: 'MB-01' }],
       },
       {
         id: 'TK-16', code: 'CV-016', title: 'Chụp ảnh bộ sản phẩm mới',

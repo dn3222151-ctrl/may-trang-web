@@ -28,6 +28,9 @@
   D.openMemberForm = function (id) {
     const m = id ? MT.db.members.get(id) : null;
     const isNew = !m;
+    const hasAccount = Boolean(m && m.authUserId);
+    const cloudReady = Boolean(MT.remote && MT.remote.isConfigured());
+    const cloudSignedIn = cloudReady && MT.remote.status().signedIn;
     const body =
       '<div class="form-section"><div class="form-section__title">Thông tin thành viên</div>' +
         '<div class="field"><label>Họ và tên <span class="req">*</span></label><input class="input" id="mfName" value="' + U.esc(m ? m.name : '') + '" placeholder="Nguyễn Văn A"><span class="field-error">Vui lòng nhập họ tên.</span></div>' +
@@ -51,6 +54,23 @@
             '<button type="button" class="avatar" data-color="' + c + '" style="background:' + c + ';width:26px;height:26px;border:none;outline:' + (m && m.color === c ? '2px solid #1E293B' : 'none') + ';outline-offset:2px" aria-label="Màu ' + c + '"></button>').join('') +
         '</div><input type="hidden" id="mfColor" value="' + U.esc(m ? m.color : '#4F46E5') + '"></div>' +
       '</div>' +
+      '<div class="form-section"><div class="form-section__title">Tài khoản đăng nhập</div>' +
+        (hasAccount
+          ? '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:var(--db-success-soft);border:1px solid #B9EBD9;border-radius:9px;padding:.6rem .7rem">' +
+              '<span class="badge badge-success">Đã có tài khoản</span><strong style="font-size:.78rem">' + U.esc(m.email || '') + '</strong>' +
+              '<button class="btn btn-sm" type="button" id="mfResetPass" style="margin-left:auto">Gửi email đặt lại mật khẩu</button>' +
+            '</div>' +
+            '<p style="font-size:.68rem;color:var(--db-muted);margin-top:.45rem">Thành viên đăng nhập tại <strong>member.html</strong> bằng email này. Tài khoản được liên kết với hồ sơ thành viên và chỉ nhận được nhiệm vụ của mình.</p>'
+          : !cloudReady
+            ? '<p style="font-size:.72rem;color:var(--db-muted);background:var(--db-line-soft);border-radius:8px;padding:.6rem .7rem">Cấu hình Supabase trong <strong>Cài đặt → Supabase</strong> để tạo tài khoản đăng nhập cho thành viên.</p>'
+            : '<label class="check" style="margin-bottom:.55rem"><input type="checkbox" id="mfCreateAccount"> Tạo tài khoản đăng nhập cho thành viên này</label>' +
+              '<div class="field"><label>Mật khẩu khởi tạo (tối thiểu 6 ký tự)</label><input class="input" id="mfPassword" type="password" placeholder="••••••••" autocomplete="new-password"><span class="field-error">Mật khẩu cần ít nhất 6 ký tự.</span></div>' +
+              '<p style="font-size:.68rem;color:var(--db-muted);margin:0">' +
+                (cloudSignedIn
+                  ? 'Tài khoản dùng email ở trên. Thành viên đăng nhập tại <strong>member.html</strong> để nhận việc và nộp bằng chứng.'
+                  : 'Bạn cần <button class="btn btn-xs" type="button" id="mfLoginAdmin">đăng nhập quản trị Supabase</button> trước khi tạo tài khoản.') +
+              '</p>') +
+      '</div>' +
       '<p style="font-size:.68rem;color:var(--db-muted);background:var(--db-line-soft);border-radius:8px;padding:.5rem .6rem">Cổ phần còn lại (quỹ dự phòng): <strong>' + U.fmt.pct(Math.max(0, 100 - totalEquity(id))) + '</strong></p>';
 
     D.modal({
@@ -67,10 +87,33 @@
           b.style.outline = '2px solid #1E293B';
           b.style.outlineOffset = '2px';
         }));
-        el.querySelector('#mfSubmit').addEventListener('click', () => {
+        const loginBtn = el.querySelector('#mfLoginAdmin');
+        if (loginBtn) loginBtn.addEventListener('click', () => {
+          D.openAdminLogin({
+            onSuccess: () => {
+              if (id) setTimeout(() => D.openMemberForm(id), 250);
+              else D.toast('Đã đăng nhập. Hãy mở lại form để tạo tài khoản.', 'success');
+            },
+          });
+        });
+        const resetBtn = el.querySelector('#mfResetPass');
+        if (resetBtn) resetBtn.addEventListener('click', async () => {
+          if (!m || !m.email) return;
+          resetBtn.disabled = true;
+          try {
+            await MT.remote.resetMemberPassword(m.email);
+            D.toast('Đã gửi email đặt lại mật khẩu tới ' + m.email, 'success');
+          } catch (e) { D.toast(e.message, 'error'); }
+          finally { resetBtn.disabled = false; }
+        });
+
+        const submitBtn = el.querySelector('#mfSubmit');
+        submitBtn.addEventListener('click', async () => {
           const name = el.querySelector('#mfName');
           const role = el.querySelector('#mfRole');
           const email = el.querySelector('#mfEmail');
+          const createBox = el.querySelector('#mfCreateAccount');
+          const password = el.querySelector('#mfPassword');
           let ok = true;
           [name, role, email].forEach((inp) => inp.closest('.field').classList.remove('invalid'));
           if (name.value.trim().length < 2) { name.closest('.field').classList.add('invalid'); ok = false; }
@@ -84,6 +127,14 @@
             el.querySelector('#mfEquity').closest('.field').classList.add('invalid'); ok = false;
             D.toast('Tổng cổ phần vượt 100%. Còn lại ' + U.fmt.pct(Math.max(0, 100 - totalEquity(id))) + '.', 'error');
           }
+          const wantAccount = Boolean(createBox && createBox.checked);
+          if (wantAccount) {
+            if (!emailVal) { email.closest('.field').classList.add('invalid'); ok = false; }
+            if (!password || password.value.length < 6) {
+              if (password) password.closest('.field').classList.add('invalid');
+              ok = false;
+            }
+          }
           if (!ok) return;
           const data = {
             name: name.value.trim(), role: role.value.trim(), email: emailVal,
@@ -96,12 +147,39 @@
             note: el.querySelector('#mfNote').value.trim(),
             color,
           };
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Đang lưu…';
           try {
-            MT.db.members.save(id || null, data);
-            D.toast(isNew ? 'Đã thêm thành viên' : 'Đã cập nhật thành viên', 'success');
+            const saved = MT.db.members.save(id || null, data);
+            if (wantAccount) {
+              if (!MT.remote.status().signedIn) {
+                D.toast('Đã lưu thành viên. Đăng nhập quản trị Supabase rồi mở lại để tạo tài khoản.', 'error', { duration: 6000 });
+              } else {
+                try {
+                  const res = await MT.remote.createMemberAccount(saved.id, {
+                    email: emailVal, password: password.value, fullName: data.name,
+                  });
+                  D.toast(res.needsConfirmation
+                    ? 'Đã tạo tài khoản. Cần xác nhận email trước khi đăng nhập (kiểm tra cài đặt Auth).'
+                    : 'Đã tạo tài khoản đăng nhập cho ' + data.name,
+                  res.needsConfirmation ? 'info' : 'success', { duration: 6000 });
+                } catch (accErr) {
+                  const msg = /auth_user_id|column .* does not exist|schema cache/i.test(accErr.message)
+                    ? 'Cơ sở dữ liệu chưa chạy migration-v2-auth-sync.sql nên chưa có cột auth_user_id.'
+                    : accErr.message;
+                  D.toast('Đã lưu thành viên nhưng chưa tạo được tài khoản: ' + msg, 'error', { duration: 7000 });
+                }
+              }
+            } else {
+              D.toast(isNew ? 'Đã thêm thành viên' : 'Đã cập nhật thành viên', 'success');
+            }
             close();
             D.refresh();
-          } catch (e) { D.toast(e.message, 'error'); }
+          } catch (e) {
+            D.toast(e.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = isNew ? 'Thêm thành viên' : 'Lưu thay đổi';
+          }
         });
       },
     });
@@ -140,15 +218,17 @@
           '<div class="stat"><span>Cam kết mỗi tuần</span><strong>' + hours + ' <small>giờ</small></strong><span style="margin-top:.15rem">' + openTasks + ' nhiệm vụ đang mở</span></div>' +
         '</div>' +
         (totalEq > 100 ? '<div class="alert-banner alert-banner--danger">' + D.icon('alert', 16) + '<div>Tổng cổ phần đang vượt 100%. Vui lòng điều chỉnh lại tỷ lệ các thành viên.</div></div>' : '') +
-        '<div class="card" style="margin-bottom:1rem"><div class="card__head"><div><div class="card__title">Đội ngũ Mây Trắng</div><div class="card__sub">Hồ sơ, cổ phần và hiệu suất công việc</div></div>' +
-          '<button class="btn btn-primary btn-sm" type="button" id="addMember">' + D.icon('plus', 14) + ' Thêm thành viên</button></div>' +
+        '<div class="card" style="margin-bottom:1rem"><div class="card__head"><div><div class="card__title">Đội ngũ Mây Trắng</div><div class="card__sub">Hồ sơ, cổ phần, tài khoản đăng nhập và hiệu suất công việc</div></div>' +
+          '<div style="display:flex;gap:.4rem;flex-wrap:wrap"><a class="btn btn-sm" href="member.html" target="_blank" rel="noopener">' + D.icon('globe', 13) + ' Cổng thành viên</a>' +
+          '<button class="btn btn-primary btn-sm" type="button" id="addMember">' + D.icon('plus', 14) + ' Thêm thành viên</button></div></div>' +
           '<div class="card__body"><div class="member-grid">' + members.map((m) => {
             const st = memberStats(m.id);
             return '<div class="member-card">' +
               '<div class="member-card__top">' + D.avatar(m, 'lg') +
                 '<div class="member-card__meta"><h3>' + U.esc(m.name) + '</h3><p>' + U.esc(m.role) + '</p>' +
                 '<div class="member-card__badges"><span class="badge badge-' + (m.status === 'active' ? 'success' : m.status === 'probation' ? 'warn' : 'gray') + '">' + (m.status === 'active' ? 'Đang hoạt động' : m.status === 'probation' ? 'Thử việc' : 'Tạm nghỉ') + '</span>' +
-                '<span class="badge badge-purple no-dot">' + U.fmt.pct(m.equityPct || 0) + ' cổ phần</span></div></div>' +
+                '<span class="badge badge-purple no-dot">' + U.fmt.pct(m.equityPct || 0) + ' cổ phần</span>' +
+                (m.authUserId ? '<span class="badge badge-info no-dot">Có tài khoản</span>' : '') + '</div></div>' +
                 '<div class="member-card__actions"><button class="btn btn-xs btn-icon" type="button" data-edit-member="' + m.id + '" title="Sửa">' + D.icon('edit', 12) + '</button>' +
                 '<button class="btn btn-xs btn-icon" type="button" data-delete-member="' + m.id + '" title="Xoá">' + D.icon('trash', 12) + '</button></div></div>' +
               '<div style="font-size:.68rem;color:var(--db-muted);margin-top:.6rem;display:flex;flex-direction:column;gap:.1rem">' +

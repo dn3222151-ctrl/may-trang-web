@@ -1,4 +1,4 @@
--- ============================================================================
+﻿-- ============================================================================
 -- MÂY TRẮNG – Supabase schema
 -- Chạy file này trong Supabase SQL Editor, sau đó chạy seed.sql
 -- ============================================================================
@@ -122,6 +122,7 @@ create table if not exists public.members (
   name text not null,
   role text,
   email text unique,
+  auth_user_id uuid unique references auth.users(id) on delete set null,
   phone text,
   equity_pct numeric(5, 2) not null default 0 check (equity_pct >= 0 and equity_pct <= 100),
   weekly_hours integer not null default 0,
@@ -219,6 +220,7 @@ create index if not exists idx_orders_status on public.orders (status);
 create index if not exists idx_orders_channel on public.orders (channel);
 create index if not exists idx_order_items_order on public.order_items (order_id);
 create index if not exists idx_tasks_assignee on public.tasks (assignee_id);
+create index if not exists idx_members_auth_user on public.members (auth_user_id);
 create index if not exists idx_tasks_status on public.tasks (status);
 create index if not exists idx_tasks_due on public.tasks (due_date);
 create index if not exists idx_evidence_task on public.task_evidence (task_id);
@@ -293,22 +295,61 @@ drop policy if exists "order_items_admin_all" on public.order_items;
 create policy "order_items_admin_all" on public.order_items
   for all using (public.is_admin()) with check (public.is_admin());
 
--- Đội ngũ, nhiệm vụ, bằng chứng: chỉ quản trị viên
+-- Đội ngũ, nhiệm vụ, bằng chứng: admin toàn quyền; thành viên chỉ thấy dữ liệu của mình
 drop policy if exists "members_admin_all" on public.members;
 create policy "members_admin_all" on public.members
   for all using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "members_self_read" on public.members;
+create policy "members_self_read" on public.members
+  for select to authenticated using (auth_user_id = auth.uid());
 
 drop policy if exists "tasks_admin_all" on public.tasks;
 create policy "tasks_admin_all" on public.tasks
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "tasks_member_read" on public.tasks;
+create policy "tasks_member_read" on public.tasks
+  for select to authenticated
+  using (assignee_id in (select id from public.members where auth_user_id = auth.uid()));
+
 drop policy if exists "evidence_admin_all" on public.task_evidence;
 create policy "evidence_admin_all" on public.task_evidence
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "evidence_member_read" on public.task_evidence;
+create policy "evidence_member_read" on public.task_evidence
+  for select to authenticated
+  using (exists (
+    select 1 from public.tasks t
+    join public.members m on m.id = t.assignee_id
+    where t.id = task_evidence.task_id and m.auth_user_id = auth.uid()
+  ));
+
+drop policy if exists "evidence_member_insert" on public.task_evidence;
+create policy "evidence_member_insert" on public.task_evidence
+  for insert to authenticated
+  with check (
+    submitted_by in (select id from public.members where auth_user_id = auth.uid())
+    and exists (
+      select 1 from public.tasks t
+      join public.members m on m.id = t.assignee_id
+      where t.id = task_evidence.task_id and m.auth_user_id = auth.uid()
+    )
+  );
+
 drop policy if exists "activity_admin_all" on public.task_activity;
 create policy "activity_admin_all" on public.task_activity
   for all using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "activity_member_read" on public.task_activity;
+create policy "activity_member_read" on public.task_activity
+  for select to authenticated
+  using (exists (
+    select 1 from public.tasks t
+    join public.members m on m.id = t.assignee_id
+    where t.id = task_activity.task_id and m.auth_user_id = auth.uid()
+  ));
 
 -- Đánh giá: công khai đọc, khách được gửi đánh giá mới
 drop policy if exists "reviews_public_read" on public.reviews;
@@ -323,7 +364,11 @@ drop policy if exists "reviews_admin_all" on public.reviews;
 create policy "reviews_admin_all" on public.reviews
   for all using (public.is_admin()) with check (public.is_admin());
 
--- Mã giảm giá & cài đặt: chỉ quản trị viên
+-- Mã giảm giá: khách đọc mã đang áp dụng (để website tính giảm giá), admin toàn quyền
+drop policy if exists "coupons_public_read" on public.coupons;
+create policy "coupons_public_read" on public.coupons
+  for select using (active = true);
+
 drop policy if exists "coupons_admin_all" on public.coupons;
 create policy "coupons_admin_all" on public.coupons
   for all using (public.is_admin()) with check (public.is_admin());
@@ -342,11 +387,79 @@ create policy "subscribers_admin_read" on public.subscribers
   for select using (public.is_admin());
 
 -- ---------------------------------------------------------------------------
+-- 7.1 Hàm cho cổng thành viên & dữ liệu công khai
+-- ---------------------------------------------------------------------------
+create or replace function public.member_update_task(
+  p_task_id text,
+  p_progress integer default null,
+  p_status text default null
+)
+returns public.tasks
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_member text;
+  v_task public.tasks;
+begin
+  select m.id into v_member
+  from public.members m
+  join public.tasks t on t.assignee_id = m.id
+  where t.id = p_task_id and m.auth_user_id = auth.uid();
+
+  if v_member is null then
+    raise exception 'Bạn không được giao nhiệm vụ này.';
+  end if;
+  if p_status is not null and p_status not in ('todo', 'doing', 'review', 'done') then
+    raise exception 'Trạng thái không hợp lệ.';
+  end if;
+  if p_progress is not null and (p_progress < 0 or p_progress > 100) then
+    raise exception 'Tiến độ phải nằm trong khoảng 0–100.';
+  end if;
+
+  update public.tasks
+  set status = coalesce(p_status, status),
+      progress = case
+        when coalesce(p_status, status) = 'done' then 100
+        else coalesce(p_progress, progress)
+      end,
+      completed_at = case
+        when coalesce(p_status, status) = 'done' then coalesce(completed_at, now())
+        else null
+      end,
+      updated_at = now()
+  where id = p_task_id
+  returning * into v_task;
+
+  insert into public.task_activity (task_id, text, by_member)
+  values (p_task_id, 'Cập nhật tiến độ từ cổng thành viên', v_member);
+
+  return v_task;
+end;
+$$;
+
+create or replace function public.public_store_settings()
+returns jsonb
+language sql stable security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'store', coalesce(data -> 'store', '{}'::jsonb),
+    'shipping', coalesce(data -> 'shipping', '{}'::jsonb),
+    'storefront', coalesce(data -> 'storefront', '{}'::jsonb)
+  )
+  from public.settings
+  where id = 1;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 8. Quyền API
 -- ---------------------------------------------------------------------------
 grant usage on schema public to anon, authenticated;
-grant select on public.products, public.reviews to anon;
+grant select on public.products, public.reviews, public.coupons to anon;
 grant insert on public.reviews, public.subscribers to anon;
+grant execute on function public.public_store_settings() to anon, authenticated;
+grant execute on function public.member_update_task(text, integer, text) to authenticated;
 grant all on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 
@@ -378,6 +491,42 @@ drop policy if exists "evidence_files_admin_delete" on storage.objects;
 create policy "evidence_files_admin_delete" on storage.objects
   for delete to authenticated
   using (bucket_id = 'task-evidence' and public.is_admin());
+
+-- Thành viên được upload ảnh bằng chứng vào thư mục members/{member}/{task}
+drop policy if exists "evidence_files_member_insert" on storage.objects;
+create policy "evidence_files_member_insert" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'task-evidence'
+    and (storage.foldername(name))[1] = 'members'
+    and (storage.foldername(name))[2] in (select id from public.members where auth_user_id = auth.uid())
+  );
+
+drop policy if exists "evidence_files_member_update" on storage.objects;
+create policy "evidence_files_member_update" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'task-evidence' and owner = auth.uid())
+  with check (bucket_id = 'task-evidence' and owner = auth.uid());
+
+drop policy if exists "evidence_files_member_delete" on storage.objects;
+create policy "evidence_files_member_delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'task-evidence' and owner = auth.uid());
+
+-- Bật realtime cho các bảng cần đồng bộ tức thời (bỏ qua nếu đã bật)
+do $$
+declare t text;
+begin
+  foreach t in array array['products', 'settings', 'coupons', 'reviews', 'members', 'tasks', 'task_evidence', 'task_activity']
+  loop
+    begin
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    exception
+      when duplicate_object then null;
+      when undefined_object then null;
+    end;
+  end loop;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 10. View báo cáo
@@ -413,11 +562,12 @@ order by revenue desc;
 -- ---------------------------------------------------------------------------
 -- Cách 1 (khuyến nghị): Authentication > Users > Add user, sau đó chạy:
 --   insert into public.profiles (id, email, full_name, role)
---   select id, email, 'Quản trị Mây Trắng', 'admin'
+--   select id, email, 'Nguyễn Tiến Dũng', 'admin'
 --   from auth.users where email = 'admin@maytrang.vn'
---   on conflict (id) do update set role = 'admin';
+--   on conflict (id) do update set role = 'admin', full_name = 'Nguyễn Tiến Dũng';
 --
 -- Cách 2: dùng service_role để tạo user qua Admin API rồi cập nhật role.
 --
--- Ghi chú: website dùng anon key, chỉ đọc sản phẩm/đánh giá và gửi đánh giá,
--- đăng ký nhận tin. Dashboard cần đăng nhập tài khoản admin để đẩy dữ liệu.
+-- Ghi chú: website dùng publishable/anon key, chỉ đọc dữ liệu công khai và gửi đánh giá.
+-- Dashboard cần đăng nhập admin để đẩy dữ liệu; thành viên đăng nhập tại member.html.
+-- Tạo tài khoản thành viên trong Dashboard > Thành viên > Tài khoản đăng nhập.

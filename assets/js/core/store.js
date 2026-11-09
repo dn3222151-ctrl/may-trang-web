@@ -104,6 +104,25 @@
     });
     if (inventoryDirty) storage.set('inventory', db.data.inventory);
 
+    // Nâng cấp dữ liệu cũ: đổi tên CEO theo yêu cầu
+    const ceo = (db.data.members || []).find((m) => m.id === 'MB-01');
+    if (ceo && ceo.name === 'Lại Trọng Việt') {
+      ceo.name = 'Nguyễn Tiến Dũng';
+      if (!ceo.email || ceo.email === 'viet@maytrang.vn') ceo.email = 'dung@maytrang.vn';
+      ceo.note = 'CEO — phụ trách vận hành và phát triển kênh CLB.';
+      storage.set('members', db.data.members);
+    }
+    let tasksDirty = false;
+    (db.data.tasks || []).forEach((t) => {
+      (t.activity || []).forEach((a) => {
+        if (a.text && a.text.indexOf('Lại Trọng Việt') >= 0) {
+          a.text = a.text.replace(/Lại Trọng Việt/g, 'Nguyễn Tiến Dũng');
+          tasksDirty = true;
+        }
+      });
+    });
+    if (tasksDirty) storage.set('tasks', db.data.tasks);
+
     storage.set('meta', { seedVersion, initializedAt: new Date().toISOString(), appVersion: MT.config.version });
     db.ready = true;
     MT.bus.emit('db:ready');
@@ -114,6 +133,12 @@
     const ok = storage.set(name, db.data[name]);
     MT.bus.emit('db:change', { name });
     return ok;
+  };
+
+  /** Ghi localStorage không phát sự kiện (dùng khi đồng bộ cloud tránh vòng lặp). */
+  db.saveQuiet = function (name) {
+    if (!db.data) return false;
+    return storage.set(name, db.data[name]);
   };
 
   db.saveMany = function (names) {
@@ -315,6 +340,7 @@
       if (p.custom) {
         db.data.customProducts = db.data.customProducts.filter((x) => x.id !== id);
         db.save('customProducts');
+        MT.bus.emit('entity:delete', { table: 'products', id });
       } else {
         db.data.inventory[id] = Object.assign({}, db.data.inventory[id], { active: false });
         db.save('inventory');
@@ -628,6 +654,7 @@
         }
       });
       db.saveMany(['members', 'tasks']);
+      MT.bus.emit('entity:delete', { table: 'members', id });
       MT.bus.emit('members:change');
       MT.bus.emit('tasks:change');
       return true;
@@ -682,6 +709,7 @@
       if (!t) return false;
       db.data.tasks = db.data.tasks.filter((x) => x.id !== id);
       db.save('tasks');
+      MT.bus.emit('entity:delete', { table: 'tasks', id });
       MT.bus.emit('tasks:change');
       return true;
     },

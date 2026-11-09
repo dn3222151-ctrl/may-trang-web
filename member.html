@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cổng thành viên – Mây Trắng</title>
+  <meta name="description" content="Đăng nhập cổng thành viên Mây Trắng để nhận nhiệm vụ, cập nhật tiến độ và nộp bằng chứng.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <link rel="stylesheet" href="assets/css/member.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234F46E5'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='Georgia'%3EM%3C/text%3E%3C/svg%3E">
+</head>
+<body class="member-page">
+<div class="mp-shell">
+
+  <div class="mp-center" id="bootView">
+    <div style="text-align:center;color:#64748B">
+      <div class="spinner" style="width:36px;height:36px;margin:0 auto 1rem"></div>
+      <p style="font-size:.8rem">Đang kết nối cổng thành viên…</p>
+    </div>
+  </div>
+
+  <div class="mp-center hidden" id="configView">
+    <div class="mp-auth">
+      <div class="mp-auth__head">
+        <span class="mp-brand"><span class="brand-mark"></span> Mây <b>Trắng</b></span>
+        <h1>Cần cấu hình Supabase</h1>
+        <p>Cổng thành viên cần kết nối cơ sở dữ liệu để nhận nhiệm vụ.</p>
+      </div>
+      <div class="mp-note">
+        Mở <strong>dashboard.html → Cài đặt → Supabase</strong>, nhập Project URL + anon key, chạy <code>schema.sql</code> bản mới rồi đăng nhập quản trị. Sau đó tạo tài khoản cho thành viên trong mục <strong>Thành viên</strong>.
+      </div>
+      <p style="margin-top:1rem;text-align:center"><a href="dashboard.html" class="btn btn-primary">Mở dashboard quản trị</a></p>
+      <p class="mp-auth__foot"><a href="index.html">← Về cửa hàng Mây Trắng</a></p>
+    </div>
+  </div>
+
+  <div class="mp-center hidden" id="loginView">
+    <div class="mp-auth">
+      <div class="mp-auth__head">
+        <span class="mp-brand"><span class="brand-mark"></span> Mây <b>Trắng</b></span>
+        <h1>Cổng thành viên</h1>
+        <p>Đăng nhập để nhận nhiệm vụ và báo cáo bằng chứng.</p>
+      </div>
+      <div class="mp-error" id="loginError"></div>
+      <form id="loginForm" novalidate>
+        <div class="field"><label for="loginEmail">Email</label><input class="input" id="loginEmail" type="email" placeholder="ten@maytrang.vn" autocomplete="username" required></div>
+        <div class="field"><label for="loginPassword">Mật khẩu</label><input class="input" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" required></div>
+        <button class="btn btn-primary" type="submit" id="loginSubmit">Đăng nhập</button>
+      </form>
+      <p class="mp-auth__foot">Tài khoản do quản trị viên cấp. Quên mật khẩu? Liên hệ quản trị viên để gửi lại email đặt lại mật khẩu.<br><a href="index.html">← Về cửa hàng Mây Trắng</a></p>
+    </div>
+  </div>
+
+  <div id="portalView" class="hidden">
+    <header class="mp-header">
+      <div class="mp-header__inner">
+        <a href="index.html" class="mp-brand"><span class="brand-mark"></span> Mây <b>Trắng</b></a>
+        <div class="mp-user">
+          <span class="avatar" id="mpAvatar" style="background:#4F46E5">?</span>
+          <div class="mp-user__meta"><strong id="mpName">Thành viên</strong><span id="mpRole">Đang tải…</span></div>
+        </div>
+        <div class="mp-header__actions">
+          <span class="mp-live" id="mpLive">Supabase</span>
+          <a class="btn btn-sm" href="index.html">Cửa hàng</a>
+          <button class="btn btn-sm" id="logoutBtn" type="button">Đăng xuất</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mp-main">
+      <div class="mp-welcome">
+        <div>
+          <h1 id="mpGreeting">Xin chào</h1>
+          <p id="mpSub">Danh sách nhiệm vụ được giao cho bạn.</p>
+        </div>
+        <span class="mp-date" id="mpDate"></span>
+      </div>
+
+      <div class="mp-stats" id="mpStats"></div>
+
+      <div class="mp-grid">
+        <div>
+          <section class="mp-card">
+            <div class="mp-card__head">
+              <div><h2>Nhiệm vụ của tôi</h2><span id="mpTaskCount">0 nhiệm vụ</span></div>
+              <div class="mp-toolbar">
+                <select class="mp-filter" id="mpFilter">
+                  <option value="active">Đang thực hiện</option>
+                  <option value="all">Tất cả</option>
+                  <option value="done">Đã hoàn thành</option>
+                  <option value="overdue">Quá hạn</option>
+                </select>
+              </div>
+            </div>
+            <div class="mp-card__body" id="mpTasks"></div>
+          </section>
+        </div>
+        <aside>
+          <section class="mp-card">
+            <div class="mp-card__head"><h2>Hồ sơ của tôi</h2></div>
+            <div class="mp-card__body mp-profile" id="mpProfile"></div>
+          </section>
+          <section class="mp-card">
+            <div class="mp-card__head"><div><h2>Bằng chứng gần đây</h2><span id="mpEvidenceCount">0 mục</span></div></div>
+            <div class="mp-card__body" id="mpEvidence"></div>
+          </section>
+        </aside>
+      </div>
+      <p class="mp-footnote" id="mpUpdated"></p>
+    </main>
+  </div>
+</div>
+
+<div id="memberModalRoot"></div>
+<div class="mt-toasts" id="mt-toasts"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/core/util.js"></script>
+<script src="assets/js/core/remote.js"></script>
+<script src="assets/js/member.js"></script>
+</body>
+</html>
